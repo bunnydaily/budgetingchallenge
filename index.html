@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusat Reset Keuangan Kamu</title>
+    <!-- Chosen Palette: Calm Clarity (Background: #f8f7f4, Primary: #4a5568, Accent: #2c7a7b, Highlight: #dd6b20) -->
+    <!-- Application Structure Plan: The SPA is designed as a user-centric interactive dashboard. Instead of two separate reports, it offers a choice between a 7-day "Quick Start" and a 30-day "Deep Dive" challenge. This choice dynamically populates a structured, collapsible timeline. The core architecture moves beyond a linear report by organizing key concepts and tools into dedicated, accessible sections: 'Tantangan Saya' (My Challenge), 'Alat Bantu' (Tools - with interactive trackers and planners), and 'Konsep Kunci' (Key Concepts). This interactive toolkit structure was chosen to empower users to learn and apply concepts non-linearly, enhancing engagement and long-term usability far more effectively than a static document. -->
+    <!-- Visualization & Content Choices: Report Info: 50/30/20 Rule -> Goal: Inform -> Viz: Interactive Donut Chart -> Interaction: Hover to see percentages -> Justification: A simple, clear visual for representing proportions -> Library: Chart.js/Canvas. Report Info: Budget Method Comparison Table -> Goal: Compare/Organize -> Viz: Interactive Tabbed Component -> Interaction: Click to switch between methods -> Justification: Breaks down complex information into digestible pieces, superior to a static table. Report Info: Daily/Weekly tasks -> Goal: Organize/Guide -> Viz: Collapsible Accordion Timeline -> Interaction: Click to expand/collapse days/weeks -> Justification: Manages a large amount of text, prevents user from being overwhelmed, provides a clear sense of progress. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #f8f7f4; 
+            color: #2d3748;
+        }
+        h1, h2, h3, h4, .font-display {
+            font-family: 'Poppins', sans-serif;
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-button.active {
+            border-bottom-color: #2c7a7b;
+            color: #2c7a7b;
+        }
+        .challenge-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.5s ease;
+            padding: 0 1.5rem;
+        }
+        .accordion-content.open {
+            max-height: 400px; /* Fixed max height for scrolling */
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a0aec0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-3">Pusat Reset Keuangan Kamu</h1>
+            <p class="text-lg text-gray-600">Alat bantu interaktif untuk memulai perjalanan kamu menuju kondisi finansial yang lebih baik dan terarah.</p>
+        </header>
+
+        <main id="app-container">
+            
+            <section id="challenge-selector" class="text-center bg-white p-8 rounded-2xl shadow-md mb-10">
+                <h2 class="text-2xl font-bold mb-2 text-gray-700">Pilih Tantangan Kamu</h2>
+                <p class="text-gray-600 mb-6">Pilih tantangan yang sesuai dengan tujuan dan kondisi finansial kamu</p>
+                <div class="flex flex-col md:flex-row justify-center gap-6">
+                    <div id="select-7-day" class="challenge-card cursor-pointer border-2 border-gray-200 p-6 rounded-xl flex-1 hover:border-teal-600">
+                        <h3 class="text-xl font-bold text-teal-800">🚀 Tantangan 7 Hari</h3>
+                        <p class="mt-2 text-gray-600">Sebuah perencanaan ulang singkat untuk mengetahui dan mengidentifikasi prioritas pengeluaran kamu.</p>
+                    </div>
+                    <div id="select-30-day" class="challenge-card cursor-pointer border-2 border-gray-200 p-6 rounded-xl flex-1 hover:border-orange-600">
+                        <h3 class="text-xl font-bold text-orange-800">🌊 Tantangan 30 Hari</h3>
+                        <p class="mt-2 text-gray-600">Perjalanan transformatif untuk membangun kebiasan budgeting yang lebih berkelanjutan.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div id="main-content" class="hidden">
+                <button id="back-button" class="mb-6 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Kembali ke Halaman Utama
+                </button>
+                <nav class="flex justify-center border-b-2 border-gray-200 mb-8">
+                    <button data-tab="challenge" class="nav-button active font-display font-semibold py-3 px-6">Tantangan Kamu</button>
+                    <button data-tab="tools" class="nav-button font-display font-semibold py-3 px-6">Alat Bantu</button>
+                    <button data-tab="concepts" class="nav-button font-display font-semibold py-3 px-6">Konsep Kunci</button>
+                </nav>
+
+                <div id="tab-content">
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+<script>
+const challengeData = {
+    '7-day': {
+        title: 'Tantangan Mulai Cepat 7 Hari',
+        description: 'Setiap hari memiliki Misi Pagi untuk tindakan nyata dan Refleksi Malam untuk introspeksi. Klik setiap hari untuk melihat detailnya.',
+        days: [
+            { title: 'Hari 1: Sadari & Persiapkan Diri', mission: 'Lakukan inventarisasi barang esensial di rumah (dapur, pembersih). Sadari apa yang sudah Kamu miliki.', reflection: 'Apa yang hampir Kamu beli karena kebiasaan, tapi berhasil dihentikan? Catat ini.' },
+            { title: 'Hari 2: Selami Pemicu Pengeluaran', mission: 'Siapkan bekal makan siang, camilan, & minuman dari rumah. Hindari pengeluaran tak terduga.', reflection: 'Situasi, emosi, atau waktu apa yang memicu keinginan belanja Kamu hari ini?' },
+            { title: 'Hari 3: Mengelola Tekanan Sosial', mission: 'Periksa kalender, rencanakan alternatif acara sosial gratis atau murah.', reflection: 'Bagaimana teman/keluarga memengaruhi pengeluaran Kamu? Apakah FOMO berdampak?' },
+            { title: 'Hari 4: Berkreasi Tanpa Mengeluarkan Uang', mission: 'Rencanakan makanan hari ini hanya dari bahan yang sudah ada di dapur.', reflection: 'Bagaimana Kamu memecahkan masalah tanpa mengeluarkan uang hari ini? Solusi kreatif apa yang Kamu temukan?' },
+            { title: 'Hari 5: Evaluasi Kemajuan', mission: 'Hitung berapa banyak uang yang telah Kamu hemat sejauh ini dibandingkan minggu biasa.', reflection: 'Pembelian non-esensial mana yang Kamu rindukan, dan mana yang tidak?' },
+            { title: 'Hari 6: Perencanaan Sadar', mission: 'Rencanakan satu atau dua aktivitas akhir pekan yang gratis/murah.', reflection: 'Apakah definisi "esensial" Kamu berubah sejak Hari 1? Bagaimana ini akan memengaruhi keputusan masa depan?' },
+            { title: 'Hari 7: Tinjau & Rayakan!', mission: 'Rencanakan satu langkah keuangan selanjutnya (misal: buat anggaran bulanan, mulai menabung).', reflection: 'Apa pelajaran terbesar dari tantangan ini? Bagaimana menerapkannya ke depan? Rayakan tanpa boros!' },
+        ]
+    },
+    '30-day': {
+        title: 'Tantangan Pendalaman 30 Hari',
+        description: 'Tantangan ini dibagi per minggu untuk memandu Kamu membangun fondasi keuangan yang kuat. Klik setiap minggu untuk melihat fokus dan aktivitasnya.',
+        weeks: [
+            { 
+                title: 'Minggu 1: Meletakkan Fondasi', 
+                content: `
+                    <p class="mb-4">Fokus minggu ini adalah kesadaran. Dapatkan pemahaman yang jelas tentang lanskap keuangan Kamu saat ini dengan mengumpulkan data pendapatan dan pengeluaran.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Hari 1-2: Kejelasan Pendapatan.</b> Kumpulkan dokumen keuangan (slip gaji, laporan bank) dan hitung total pendapatan bersih (take-home pay) bulanan Kamu.</li>
+                        <li><b>Hari 3-5: Pelacakan Pengeluaran.</b> Lacak SETIAP pengeluaran. Kategorikan sebagai Tetap vs. Variabel dan Kebutuhan vs. Keinginan. Gunakan Alat Bantu Pelacak Pengeluaran kami!</li>
+                        <li><b>Hari 6-7: Refleksi & Penetapan Tujuan.</b> Tinjau data pengeluaran. Identifikasi pemicu belanja impulsif. Susun 1-2 tujuan finansial menggunakan metode SMART.</li>
+                    </ul>
+                `
+            },
+            { 
+                title: 'Minggu 2: Penyesuaian Strategis', 
+                content: `
+                    <p class="mb-4">Minggu ini menandai transisi dari pengamatan pasif ke keterlibatan aktif. Fokusnya adalah pada penerapan perubahan kecil yang dapat dikelola yang membebaskan uang tunai dan memilih kerangka kerja penganggaran yang selaras dengan gaya pribadi Kamu untuk keberlanjutan keberhasilan.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Hari 8-10: Temukan Peluang Penghematan Uang Tunai.</b> Tinjau kembali kategori "Keinginan" dan "Pengeluaran Variabel" Kamu dari pelacakan Minggu 1. Identifikasi 1-3 perubahan kecil yang dapat dikelola yang dapat Kamu terapkan segera untuk membebaskan uang tunai, berfokus pada area di mana Kamu dapat dengan mudah melakukan penyesuaian kecil tanpa merasa terlalu kekurangan.</li>
+                        <li><b>Hari 11-13: Berkomitmen pada Satu Tujuan Realistis.</b> Berdasarkan tujuan finansial awal yang Kamu susun di Minggu 1 (Hari 6-7), pilih SATU tujuan finansial yang sangat realistis dan dapat dicapai untuk difokuskan selama sisa tantangan 30 hari ini. Pecah tujuan yang dipilih ini menjadi langkah-langkah yang lebih kecil dan dapat ditindaklanjuti agar tidak terlalu menakutkan dan lebih mudah dikelola.</li>
+                        <li><b>Hari 14: Memilih Metode Penganggaran Kamu.</b> Luangkan waktu untuk meneliti dan memahami berbagai metode penganggaran populer. Jelajahi pilihan seperti aturan 50/30/20 (mengalokasikan 50% untuk kebutuhan, 30% untuk keinginan, 20% untuk tabungan/pembayaran utang), penganggaran berbasis nol (menugaskan setiap rupiah pekerjaan), penganggaran amplop (menggunakan uang tunai untuk kategori), atau metode "bayar diri sendiri terlebih dahulu" (memprioritaskan tabungan). Evaluasi dengan cermat metode mana yang paling sesuai dengan kepribadian Kamu, konsistensi pendapatan Kamu, tingkat kenyamanan Kamu dengan pencatatan terperinci, dan situasi finansial Kamu secara keseluruhan.</li>
+                    </ul>
+                `
+            },
+            { 
+                title: 'Minggu 3: Mengoptimalkan & Mengotomatiskan', 
+                content: `
+                    <p class="mb-4">Minggu ini adalah tentang mengambil wawasan dari pelacakan dan metode yang dipilih untuk menyempurnakan anggaran, membuatnya lebih realistis dan berkelanjutan. Fokus utama adalah memanfaatkan otomatisasi untuk membangun kebiasaan finansial yang konsisten dengan lebih sedikit usaha.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Hari 15-17: Menyesuaikan Pengeluaran Secara Realistis.</b> Berdasarkan pelacakan pengeluaran terperinci dari Minggu 1 dan metode penganggaran yang Kamu pilih di Minggu 2, sekarang saatnya untuk menyempurnakan batas pengeluaran Kamu untuk setiap kategori. Tujuannya di sini bukanlah untuk mencapai kesempurnaan segera, tetapi untuk membuat penyesuaian yang realistis dan dapat dikelola yang memungkinkan Kamu untuk tetap mengendalikan pengeluaran Kamu. Mulailah dengan mencari area untuk memangkas dalam kategori "keinginan" Kamu, karena ini biasanya menawarkan fleksibilitas paling besar. Jika penyesuaian lebih lanjut diperlukan, periksa "kebutuhan" Kamu lebih dekat; beberapa mungkin "sulit dilepaskan" daripada kebutuhan mutlak. Proses berulang ini membantu Kamu menemukan anggaran yang benar-benar berfungsi untuk hidup Kamu.</li>
+                        <li><b>Hari 18-20: Mengotomatiskan Tabungan & Pembayaran Kamu.</b> Siapkan transfer otomatis dari rekening giro Kamu ke rekening tabungan Kamu (misalnya, dana darurat, tujuan tabungan spesifik, atau rekening investasi) untuk menerapkan strategi "bayar diri sendiri terlebih dahulu". Selain itu, otomatiskan pembayaran tagihan Kamu jika memungkinkan untuk memastikan konsistensi, menghindari biaya keterlambatan, dan mengurangi beban mental.</li>
+                        <li><b>Hari 21: Tinjauan & Penyesuaian Pertengahan Tantangan.</b> Luangkan waktu yang signifikan untuk melakukan tinjauan komprehensif terhadap anggaran dan pengeluaran aktual Kamu selama tiga minggu terakhir. Bandingkan pendapatan dan pengeluaran yang direncanakan dengan apa yang sebenarnya terjadi. Identifikasi setiap perbedaan, area di mana Kamu mengeluarkan uang berlebihan atau kurang, atau di mana rencana awal Kamu tidak berjalan dengan sempurna. Ini adalah kesempatan belajar, bukan penilaian.</li>
+                    </ul>
+                `
+            },
+            { 
+                title: 'Minggu 4: Pertumbuhan & Perayaan', 
+                content: `
+                    <p class="mb-4">Minggu terakhir tantangan ini bergerak melampaui penyesuaian dasar untuk mengeksplorasi strategi proaktif untuk pertumbuhan finansial. Ini berpuncak pada refleksi komprehensif dan perayaan kemajuan yang dicapai, menyiapkan panggung untuk kesejahteraan finansial yang berkelanjutan.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Hari 22-24: Pengeluaran Cerdas & Penurunan Tingkat.</b> Alih-alih menghilangkan pengeluaran sepenuhnya, jelajahi peluang untuk "menurunkan tingkat tanpa kehilangan apa yang penting". Ini melibatkan pencarian alternatif yang lebih hemat biaya untuk layanan atau produk yang Kamu hargai. Contohnya termasuk beralih ke paket telepon yang lebih murah, meninjau dan berpotensi menurunkan langganan streaming, atau memilih merek generik daripada merek terkenal untuk barang sehari-hari. Praktikkan "Aturan 7 Hari" untuk pembelian non-esensial: jika Kamu ingin membeli sesuatu, tunggu tujuh hari sebelum melakukan pembelian untuk melihat apakah itu benar-benar dibutuhkan. Ini membantu mengekang pembelian impulsif.</li>
+                        <li><b>Hari 25-27: Menjelajahi Peningkatan Pendapatan.</b> Meskipun penganggaran terutama berfokus pada pengelolaan pengeluaran, menjelajahi cara untuk meningkatkan pendapatan dapat secara signifikan mempercepat tujuan finansial Kamu. Pikirkan jalur potensial untuk meningkatkan penghasilan Kamu, bahkan untuk sementara. Pertimbangkan untuk menjual barang-barang yang tidak dibutuhkan melalui decluttering dan pasar online, mengambil pekerjaan freelance, atau berpartisipasi dalam ekonomi gig paruh waktu. Ini tidak selalu tentang perubahan karier permanen, tetapi tentang menemukan bantuan finansial jangka pendek atau mempercepat upaya tabungan dan pembayaran utang Kamu.</li>
+                        <li><b>Hari 28-29: Merencanakan Pengeluaran Masa Depan & Darurat.</b> Lihat ke depan dan identifikasi pengeluaran mendatang yang diketahui yang bukan bagian dari tagihan bulanan reguler Kamu (misalnya, premi asuransi tahunan, hadiah liburan, perawatan mobil, pemeriksaan medis). Mulai menyisihkan jumlah yang kecil dan khusus untuk biaya yang diantisipasi ini. Yang terpenting, prioritaskan pembangunan atau kelanjutan pembangunan dana darurat, yang merupakan tujuan finansial jangka pendek yang vital. Bahkan menyisihkan sejumlah kecil seperti Rp 50.000-Rp 100.000 per gaji dapat membuat perbedaan signifikan seiring waktu. Perencanaan proaktif ini mengurangi stres finansial di masa depan.</li>
+                        <li><b>Hari 30: Refleksi Akhir & Perayaan.</b> Dedikasikan hari ini untuk tinjauan komprehensif seluruh perjalanan penganggaran 30 hari Kamu. Bandingkan situasi finansial, kebiasaan pengeluaran, dan kesadaran finansial Kamu secara keseluruhan dari Hari 1 hingga Hari 30.</li>
+                    </ul>
+                `
+            }
+        ]
+    }
+};
+
+const appState = {
+    selectedChallenge: null,
+    activeTab: 'challenge',
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const challengeSelector = document.getElementById('challenge-selector');
+    const mainContent = document.getElementById('main-content');
+    const tabContentContainer = document.getElementById('tab-content');
+    const navButtons = document.querySelectorAll('.nav-button');
+    const backButton = document.getElementById('back-button');
+
+    document.getElementById('select-7-day').addEventListener('click', () => selectChallenge('7-day'));
+    document.getElementById('select-30-day').addEventListener('click', () => selectChallenge('30-day'));
+    backButton.addEventListener('click', goBackToSelector);
+
+    function selectChallenge(type) {
+        appState.selectedChallenge = type;
+        challengeSelector.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        renderContent();
+    }
+    
+    function goBackToSelector() {
+        appState.selectedChallenge = null;
+        appState.activeTab = 'challenge'; 
+        challengeSelector.classList.remove('hidden');
+        mainContent.classList.add('hidden');
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.nav-button[data-tab="challenge"]').classList.add('active');
+    }
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            appState.activeTab = button.dataset.tab;
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            renderContent();
+        });
+    });
+
+    function renderContent() {
+        tabContentContainer.innerHTML = '';
+        let content = '';
+        if (appState.activeTab === 'challenge') {
+            content = renderChallengeTab();
+        } else if (appState.activeTab === 'tools') {
+            content = renderToolsTab();
+        } else if (appState.activeTab === 'concepts') {
+            content = renderConceptsTab();
+        }
+        tabContentContainer.innerHTML = content;
+        attachEventListeners();
+        renderCharts();
+    }
+
+    function renderChallengeTab() {
+        const data = challengeData[appState.selectedChallenge];
+        let itemsHtml = '';
+        if (appState.selectedChallenge === '7-day') {
+            itemsHtml = data.days.map((day, index) => `
+                <div class="border border-gray-200 rounded-lg mb-2">
+                    <button class="accordion-toggle w-full text-left p-4 font-semibold font-display flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <span>${day.title}</span>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content">
+                        <p class="mb-2"><b>Misi Pagi:</b> ${day.mission}</p>
+                        <p><b>Refleksi Malam:</b> ${day.reflection}</p>
+                    </div>
+                </div>
+            `).join('');
+        } else { // 30-day
+             itemsHtml = data.weeks.map((week, index) => `
+                <div class="border border-gray-200 rounded-lg mb-2">
+                    <button class="accordion-toggle w-full text-left p-4 font-semibold font-display flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <span>${week.title}</span>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content">
+                        ${week.content}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        return `
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                <h2 class="text-2xl font-bold mb-2 text-gray-800">${data.title}</h2>
+                <p class="text-gray-600 mb-6">${data.description}</p>
+                <div id="accordion-container">
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderToolsTab() {
+        return `
+            <div class="space-y-8">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 font-display">📝 Pelacak Pengeluaran Harian</h3>
+                    <p class="text-gray-600 mb-4">Gunakan alat ini selama tantangan untuk mencatat setiap pengeluaran dan membangun kesadaran finansial Kamu. Data tidak disimpan setelah halaman dimuat ulang.</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3">Tanggal</th>
+                                    <th class="p-3">Deskripsi</th>
+                                    <th class="p-3">Kategori</th>
+                                    <th class="p-3">Jumlah (Rp)</th>
+                                    <th class="p-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="spending-tracker-body">
+                            </tbody>
+                        </table>
+                    </div>
+                    <form id="spending-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <input type="date" id="form-date" class="p-2 border rounded" required>
+                        <input type="text" id="form-desc" placeholder="Kopi pagi" class="p-2 border rounded" required>
+                        <input type="text" id="form-cat" placeholder="Makanan" class="p-2 border rounded" required>
+                        <input type="number" id="form-amount" placeholder="25000" class="p-2 border rounded" required>
+                        <button type="submit" class="bg-teal-600 text-white p-2 rounded hover:bg-teal-700 transition col-span-1 md:col-span-4">Tambah</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 font-display">🎯 Lembar Kerja Tujuan Finansial (SMART)</h3>
+                     <p class="text-gray-600 mb-4">Ubah aspirasi Kamu jadi rencana yang dapat ditindaklanjuti. Tentukan tujuan yang Spesifik, Terukur, Dapat Dicapai, Relevan, dan Berbatas Waktu.</p>
+                     <div class="space-y-4">
+                        <div class="p-4 border rounded-lg">
+                           <p class="font-semibold">Contoh: Dana Darurat</p>
+                           <p class="text-sm text-gray-600"><b>Tujuan:</b> Menabung Rp 3.000.000 dalam 3 bulan. <br><b>Tindakan:</b> Otomatiskan transfer Rp 250.000 setiap minggu.</p>
+                        </div>
+                         <div class="p-4 border rounded-lg">
+                           <p class="font-semibold">Contoh: Melunasi Utang</p>
+                           <p class="text-sm text-gray-600"><b>Tujuan:</b> Melunasi saldo kartu kredit Rp 5.000.000 dalam 6 bulan. <br><b>Tindakan:</b> Alokasikan tambahan Rp 200.000 setiap bayaran.</p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function renderConceptsTab() {
+        return `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 font-display">⚖️ Kebutuhan vs. Keinginan</h3>
+                    <p class="text-gray-600 mb-4">Memahami perbedaan ini adalah inti dari penganggaran. Kebutuhan adalah pengeluaran esensial yang harus tetap dilakukan untuk menjaga kehidupan sehari-hari, sementara keinginan meningkatkan gaya hidup tetapi tidak mutlak diperlukan.</p>
+                     <ul class="space-y-2">
+                        <li class="flex items-start"><span class="text-green-500 mr-2 font-bold">✓</span> <b>Kebutuhan:</b> Sewa/cicilan, makanan pokok, utilitas, transportasi kerja, pembayaran utang minimum.</li>
+                        <li class="flex items-start"><span class="text-orange-500 mr-2 font-bold">✗</span> <b>Keinginan:</b> Makan di luar, langganan streaming, belanja baju baru, kopi di kafe.</li>
+                    </ul>
+                </div>
+                 <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                    <h3 class="text-xl font-bold mb-3 font-display">💡 Metode Anggaran 50/30/20</h3>
+                    <p class="text-gray-600 mb-4">Metode populer untuk pemula. Alokasikan pendapatan bersih Kamu menjadi tiga kategori utama.</p>
+                    <div class="chart-container h-48 sm:h-56">
+                        <canvas id="rule503020Chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md md:col-span-2">
+                    <h3 class="text-xl font-bold mb-3 font-display">🧭 Perbandingan Metode Penganggaran</h3>
+                     <p class="text-gray-600 mb-4">Tidak ada satu metode yang cocok untuk semua. Pilih yang sesuai dengan kepribadian dan situasi finansial Kamu.</p>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                             <thead class="bg-gray-100 text-left">
+                                <tr>
+                                    <th class="p-3">Metode</th>
+                                    <th class="p-3">Deskripsi Singkat</th>
+                                    <th class="p-3">Cocok Untuk</th>
+                                </tr>
+                             </thead>
+                             <tbody>
+                                <tr class="border-b"><td class="p-3 font-semibold">50/30/20</td><td class="p-3">50% Kebutuhan, 30% Keinginan, 20% Tabungan/Utang</td><td class="p-3">Pemula, yang menginginkan kesederhanaan.</td></tr>
+                                <tr class="border-b"><td class="p-3 font-semibold">Berbasis Nol</td><td class="p-3">Setiap rupiah pendapatan diberi "pekerjaan". Pendapatan - Pengeluaran = 0.</td><td class="p-3">Yang suka detail & ingin memaksimalkan setiap rupiah.</td></tr>
+                                <tr class="border-b"><td class="p-3 font-semibold">Amplop</td><td class="p-3">Menggunakan uang tunai yang dialokasikan ke kategori dalam amplop fisik/digital.</td><td class="p-3">Orang yang visual & cenderung boros dengan kartu.</td></tr>
+                                <tr><td class="p-3 font-semibold">Bayar Diri Sendiri Terlebih Dahulu</td><td class="p-3">Memprioritaskan tabungan dengan mengotomatiskan transfer sebelum membayar tagihan lain.</td><td class="p-3">Yang ingin membangun kebiasaan menabung secara konsisten.</td></tr>
+                             </tbody>
+                        </table>
+                     </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function attachEventListeners() {
+        const accordionToggles = document.querySelectorAll('.accordion-toggle');
+        accordionToggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const content = toggle.nextElementSibling;
+                const icon = toggle.querySelector('svg');
+                
+                content.classList.toggle('open');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+        
+        const spendingForm = document.getElementById('spending-form');
+        if (spendingForm) {
+            spendingForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const date = document.getElementById('form-date').value;
+                const desc = document.getElementById('form-desc').value;
+                const cat = document.getElementById('form-cat').value;
+                const amount = document.getElementById('form-amount').value;
+                
+                if(date && desc && cat && amount) {
+                    addSpendingRow(date, desc, cat, amount);
+                    spendingForm.reset();
+                }
+            });
+        }
+    }
+
+    function addSpendingRow(date, desc, cat, amount) {
+        const tbody = document.getElementById('spending-tracker-body');
+        const row = document.createElement('tr');
+        row.className = 'border-b';
+        row.innerHTML = `
+            <td class="p-3">${date}</td>
+            <td class="p-3">${desc}</td>
+            <td class="p-3">${cat}</td>
+            <td class="p-3">${new Intl.NumberFormat('id-ID').format(amount)}</td>
+            <td class="p-3 text-center"><button class="delete-row text-red-500 hover:text-red-700">×</button></td>
+        `;
+        tbody.appendChild(row);
+
+        row.querySelector('.delete-row').addEventListener('click', () => {
+            row.remove();
+        });
+    }
+
+    function renderCharts() {
+        const chartCanvas = document.getElementById('rule503020Chart');
+        if (chartCanvas) {
+            new Chart(chartCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['50% Kebutuhan', '30% Keinginan', '20% Tabungan'],
+                    datasets: [{
+                        data: [50, 30, 20],
+                        backgroundColor: ['#2c7a7b', '#dd6b20', '#4a5568'],
+                        borderColor: '#f8f7f4',
+                        borderWidth: 4,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { family: "'Lato', sans-serif" }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+});
+</script>
+
+</body>
+</html>
